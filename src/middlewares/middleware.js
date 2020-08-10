@@ -3,7 +3,7 @@ const jwt = require('jsonwebtoken')
 module.exports = (req, res, next) => {
     const allValue = req.headers.authorization
     if(!allValue)
-        return res.status(402).json('Invalid!')
+        return res.status(404).json('Invalid!')
 
     const parts = allValue.split(' ')
     //it will return an array
@@ -17,7 +17,7 @@ module.exports = (req, res, next) => {
 
     jwt.verify(token, process.env.JWT_AUTH_EMAIL, (err, decoded) => {
         if(err)
-            return res.status(402).json(err)
+            return res.status(403).json(err)
 
         req.userId = decoded.email
         return next()

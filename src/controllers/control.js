@@ -4,6 +4,7 @@ const User = require('../config/schema')
 const { compare } = require('bcryptjs')
 const { sendEmail } = require('../email/send')
 const jwt = require('jsonwebtoken')
+const paramsMiddle = require('../middlewares/middleParams')
 
 router.get('/', async (req, res) => {
 
@@ -88,37 +89,27 @@ function typeEmail(email, data, subject, text, token){
 }
 
 
-router.post('/confirmation/:token', async (req, res) => {
-    const { token } = req.params
+router.post('/confirmation/:token', paramsMiddle, async (req, res) => {
     const { password, confirmPass } = req.body
 
     try {
-        if(token){
-             jwt.verify(token, process.env.JWT_AUTH_ACCOUNT, async (err, decoded) => {
-                if(err)
-                    return res.status(400).send(err) //expired
-                    
-                const { fullName, number, email } = decoded
+            const { firstName, lastName, number, email } = req.userId
+            
+            const user = await User.findOne({email})
 
-                const user = await User.findOne({email})
+            if(user)
+                return res.status(403).json('Email is already in usage')
 
-                if(user)
-                    return res.status(404).json('Email is already in usage')
-
-                if(password !== confirmPass)
+            if(password !== confirmPass)
                 return res.status(401).json('Passwords does not match')
 
-                const createEntry = await new User({ fullName, number, email, password, confirmPass })
-                await createEntry.save()
+             const createEntry = await new User({ firstName, lastName, number, email, password, confirmPass })
+             const createAccount = await createEntry.save()
 
-                createEntry.password = undefined
+            createAccount.password = undefined
 
-                return res.json('ok')
-    
-            })}
-            else {
-                return res.status(404).send('Invalid!')
-            }
+            return res.json('ok')
+
     }catch(e){
         console.log(e)
     }
