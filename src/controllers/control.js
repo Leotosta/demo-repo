@@ -5,6 +5,7 @@ const { compare } = require('bcryptjs')
 const { sendEmail } = require('../email/send')
 const jwt = require('jsonwebtoken')
 const paramsMiddle = require('../middlewares/middleParams')
+const { sendRefreshToken, generateToken }= require('../valid/sendRefresh')
 
 router.get('/', async (req, res) => {
 
@@ -28,14 +29,15 @@ router.post('/SignUp', async (req, res) => {
         if(user)
             return res.status(403).json('Something went wrong')
         
-        const token = jwt.sign({ firstName, lastName, number, email }, process.env.JWT_AUTH_EMAIL, {expiresIn: '20m'})
-        const tokenAccount = jwt.sign({firstName, lastName, number, email}, process.env.JWT_AUTH_ACCOUNT, {expiresIn: '20m'})
+        sendRefreshToken(res, generateToken({id: email}))
+        // const token = jwt.sign(user, process.env.JWT_AUTH_EMAIL, {expiresIn: '20m'})
+        const tokenAccount = jwt.sign({firstName, lastName, number, email }, process.env.JWT_AUTH_ACCOUNT, {expiresIn: '20m'})
 
         const mailOptions = typeEmail(email, { firstName, lastName, number, email}, 'Confirm your account', 'Your account needs to be activated', tokenAccount)
         
         sendEmail(mailOptions)
         // redirect to confirm
-        return res.json( token)
+        return res.json('ok')
 
     }catch(e){
         console.log(e)
@@ -49,14 +51,14 @@ router.post('/SignIn', async (req, res) => {
 
         const users = await User.findOne({email}).select('+password')
         
-        if(!users.activate)
-            return res.status(403).json('You need to activate your account!')
-
         if(!users)
             return res.status(404).json('Email or password invalid!')
 
         if(!await compare(password, users.password ))
             return res.status(402).json('Email or password invalid!')
+
+
+        // sendRefreshToken(res, generateToken({id: users._id}))
 
         users.password = undefined
 

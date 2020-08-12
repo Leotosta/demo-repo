@@ -3,10 +3,12 @@ const bodyParser = require('body-parser')
 const cors = require('cors')
 const helmet = require('helmet')
 const morgan = require('morgan')
+const cookieParser = require('cookie-parser')
 require('dotenv').config()
 
 const app = express()
 
+app.use(cookieParser())
 app.use(morgan('common'))
 app.use(bodyParser.json())
 app.use(bodyParser.urlencoded({extended: false}))
